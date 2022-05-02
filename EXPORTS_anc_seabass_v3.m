@@ -1,7 +1,8 @@
 % Read in Excel data and output SeaBASS formatted data
 
-datDir = './';
-inFile1 = [datDir 'exports_2018_FSG_Stationlog_clean.xlsx']; % wind, cloud, seas, has just a few readings per day
+datDir = '~/Projects/HyperPACE/field_data/metadata/EXPORTS/';
+inFile1 = [datDir 'exports_2018_FSG_Stationlog_clean.xlsx']; % IOP_Cage: wind, cloud, seas, has just a few readings per day
+                                                            % SAS: sensor geometry after tracker broke
 inFile2 = [datDir 'R2R_ELOG_SR1812_FINAL_EVENTLOG_20180913_022931_clean.xlsx']; %R2R Event log, includes time, lat/lon, event name, station name
 inFile3 = [datDir 'SR1812_uwmet_v1.csv']; % Comprehensive ship readings including heading, sst, sss, wind, etc. every few seconds
 

@@ -1,14 +1,15 @@
 % Read in Excel data and output SeaBASS formatted data
 
-% datDir = 'Field_Data/KORUS/Cruise_Logs/';
-datDir = './';
+platform = fullfile('/Users','daurin','Projects_Supplemental','HyperPACE','field_data');
+datDir = fullfile(platform,'metadata','KORUS');
+fSep = filesep;
 
 % Custom formatted Excel file
-inFile = [datDir 'KORUS_Onnuri_Location_AWS_noblanks.xlsx'];
-inFile2 = [datDir 'KORUS_flow_thru.xlsx'];
-inFile3 = [datDir 'KORUS_seabass_synthesis.xlsx'];
-outFile = [datDir 'KORUS_Ancillary.sb'];
-inHeader = [datDir 'KORUS_Ancillary_header1.sb'];
+inFile = [datDir fSep 'KORUS_Onnuri_Location_AWS_noblanks.xlsm']; % Ship data, 1 minute
+inFile2 = [datDir fSep 'KORUS_flow_thru.xlsx']; % CTD, 20 sec
+inFile3 = [datDir fSep 'KORUS_seabass_synthesis.xlsx']; % Biochem, Mike/Antonio, Stations
+outFile = [datDir fSep 'KORUS_Ancillary.sb'];
+inHeader = [datDir fSep 'KORUS_Ancillary_header1.sb'];
 
 kpdlat = 111.325; %km per deg. latitude
 
@@ -47,6 +48,7 @@ for i=1:length(dateTime)
         windSpeed(i), windDir(i), temp(i), speed(i), relHum(i) ];
 end
 dataMat(isnan(dataMat)) = -9999;
+dataMat(dataMat == -999) = -9999;
 
 % Relative Humidity is currently not a SB field
 dataMat(:,end) = [];
@@ -186,11 +188,18 @@ print speeds -dpng
 
 % Now assign the stations from KORUS_seabass_synthesis
 % 1. Find the nearest station timestamp within 30 min
-% 2. Confirm the location is within 1.0 km
+% 2. Confirm the location is within 1.5 km; UPDATED TO 1.5 KM TO CAPTURE A
+% FEW MORE MINUTES ON STATIONS WITH BOGUS TIMESTAMPS IN THE STATIONS
+% METADATA FILE
 % 3. Confirm the ship is not moving more than 1.5 kts (0.77 m/s)
 for i=1:length(dateTime)
     % dateTime3 can be hours apart
     [near_scalar, index] = find_nearest(dateTime(i),dateTime3);
+    
+%     if station(index) == 70
+%         fprintf(' Station: %02.2f\n', station(index))
+%         disp(datetime(dateTime(i),'convertfrom','datenum'))
+%     end
     % Within 30 min and stationary
     if abs(dateTime(i) - dateTime3(index)) < datenum(0,0,0,0,30,0)
         lat1 = newDataMat(i,8);
@@ -200,7 +209,7 @@ for i=1:length(dateTime)
         dlon = kpdlon*(lon1 - lon3(index)); 
         dist = sqrt(dlat.^2 + dlon.^2); % distance to station [km]
         
-        if dist < 1.0
+        if dist < 1.5
             if ((speed1(i) < 0.77) || isnan(speed1(i))) && ...
                     ((speed2(i) < 0.77) || isnan(speed2(i))) && ...
                     ~( isnan(speed1(i)) && isnan(speed2(i)) )
@@ -212,6 +221,7 @@ for i=1:length(dateTime)
             end
         else
             disp('Too far')
+%             disp(dist)
             newDataMat(i,1) = -9999;
         end
     else
