@@ -1,14 +1,14 @@
 % Read in Excel data and output SeaBASS formatted data
 
-datDir = '~/Projects/HyperPACE/field_data/metadata/EXPORTS/';
+datDir = '~/Projects/HyperPACE/field_data/metadata/EXPORTSNP/';
 inFile1 = [datDir 'exports_2018_FSG_Stationlog_clean.xlsx']; % IOP_Cage: wind, cloud, seas, has just a few readings per day
                                                             % SAS: sensor geometry after tracker broke
 inFile2 = [datDir 'R2R_ELOG_SR1812_FINAL_EVENTLOG_20180913_022931_clean.xlsx']; %R2R Event log, includes time, lat/lon, event name, station name
 inFile3 = [datDir 'SR1812_uwmet_v1.csv']; % Comprehensive ship readings including heading, sst, sss, wind, etc. every few seconds
 
 
-outFile = [datDir 'EXPORTS_Ancillary.sb'];
-inHeader = [datDir 'EXPORTS_Ancillary_header1.sb'];
+outFile = [datDir 'EXPORTSNP_Ancillary.sb'];
+inHeader = [datDir 'EXPORTSNP_Ancillary_header.sb'];
 
 kpdlat = 111.325; %km per deg. latitude
 
@@ -149,7 +149,7 @@ for i=1:length(data3)
             % unique(stationS)
             % Here we have either NaN or cell strings, need to reassign
             % values to be doubles to put into dataMat as well as the HDF5
-            % data later in HyperInSPACE. For the purposes of EXPORTS, we
+            % data later in HyperInSPACE. For the purposes of EXPORTSNP, we
             % have 143 unique "station" names, but many of them have
             % nothing to do with actual cruise stations. SS is small scale
             % survey, LS is large scale, ES is extended survey, and I don't
@@ -180,6 +180,17 @@ for i=1:length(data3)
 end
 dataMat(isnan(dataMat)) = -9999;
 
+clear badIndex data1 data2 data3 dateTime* lat* lon*
+% Truncate data before ship left port
+year = dataMat(:,2);
+month = dataMat(:,3);
+day = dataMat(:,4);
+hour = dataMat(:,5);
+minute = dataMat(:,6);
+second = dataMat(:,7);
+dateTime = datetime(year,month,day,hour,minute,second,'TimeZone','UTC');
+bad=(dateTime < datetime(2018,8,10,2,41,41,'TimeZone','UTC'));
+dataMat(bad,:) = [];
 
 %% Transcribe the sb header and write file
 fidIn = fopen(inHeader,'r');
@@ -202,4 +213,5 @@ for i=1:size(dataMat,1)
 end
 
 fclose(fidOut);
+
 
