@@ -214,4 +214,4 @@ end
 
 fclose(fidOut);
 
-
+%% Don't forget to fcheck the file.
