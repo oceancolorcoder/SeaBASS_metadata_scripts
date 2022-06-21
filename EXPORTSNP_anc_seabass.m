@@ -6,9 +6,11 @@ inFile1 = [datDir 'exports_2018_FSG_Stationlog_clean.xlsx']; % IOP_Cage: wind, c
 inFile2 = [datDir 'R2R_ELOG_SR1812_FINAL_EVENTLOG_20180913_022931_clean.xlsx']; %R2R Event log, includes time, lat/lon, event name, station name
 inFile3 = [datDir 'SR1812_uwmet_v1.csv']; % Comprehensive ship readings including heading, sst, sss, wind, etc. every few seconds
 
-
 outFile = [datDir 'EXPORTSNP_Ancillary.sb'];
 inHeader = [datDir 'EXPORTSNP_Ancillary_header.sb'];
+
+% Ship starts moving (see inFile3)
+startDT = datetime(2018,8,10,2,41,41,'TimeZone','UTC');
 
 kpdlat = 111.325; %km per deg. latitude
 
@@ -189,7 +191,7 @@ hour = dataMat(:,5);
 minute = dataMat(:,6);
 second = dataMat(:,7);
 dateTime = datetime(year,month,day,hour,minute,second,'TimeZone','UTC');
-bad=(dateTime < datetime(2018,8,10,2,41,41,'TimeZone','UTC'));
+bad=(dateTime < startDT);
 dataMat(bad,:) = [];
 
 %% Transcribe the sb header and write file
