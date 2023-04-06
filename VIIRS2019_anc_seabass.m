@@ -6,7 +6,7 @@ tLim = 60; % minutes
 dLim = 1.5; % km
 sLim = 1.5; % m/s ~= 3.0 kts to compensate for Gulf Stream
 
-datDir = '~/Projects_Supplemental/HyperPACE/field_data/metadata/VIIRS2019/';
+datDir = '~/Projects/HyperPACE/field_data/metadata/VIIRS2019/';
 
 % Downloaded ship data
 % inFile = [ datDir 'SCS_Compaction_VIIRS2019.csv'];
