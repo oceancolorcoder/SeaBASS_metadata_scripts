@@ -194,6 +194,16 @@ dateTime = datetime(year,month,day,hour,minute,second,'TimeZone','UTC');
 bad=(dateTime < startDT);
 dataMat(bad,:) = [];
 
+%% Calculate SensorAz
+heading = dataMat(:,11);
+offset = dataMat(:,18);
+heading(heading==-9999) = nan;
+offset(offset==-9999) = nan;
+sensorAz = heading+offset;
+sensorAz(sensorAz>360) = sensorAz(sensorAz>360) - 360;
+sensorAz(isnan(sensorAz)) = -9999;
+dataMat(:,18) = sensorAz;
+
 %% Transcribe the sb header and write file
 fidIn = fopen(inHeader,'r');
 fidOut = fopen(outFile,'w');
@@ -210,7 +220,7 @@ fclose(fidIn);
 
 for i=1:size(dataMat,1)
     %     fprintf(fidOut,'%d,%02d,%02d,%02d,%02d,%02d,%.4f,%.4f,%.2f,%3.0f,%.2f,%.2f\n',dataMat(i,:));
-    % station,year,month,day,hour,minute,second,lat,lon,SOG,heading,Wt,sal,wind,wdir,cloud,waveht,offset
+    % station,year,month,day,hour,minute,second,lat,lon,SOG,heading,Wt,sal,wind,wdir,cloud,waveht,sensoraz
     fprintf(fidOut,'%.1f,%d,%02d,%02d,%02d,%02d,%02d,%.4f,%.4f,%.2f,%03.0f,%.2f,%.2f,%.1f,%03.0f,%.0f,%.2f,%.1f\n',dataMat(i,:));
 end
 

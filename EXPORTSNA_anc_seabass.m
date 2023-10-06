@@ -1,7 +1,7 @@
 % Read in field logs and ship data and output SeaBASS formatted data
 wipe
 
-datDir = '~/Projects/HyperPACE/field_data/metadata/EXPORTS2021/';
+datDir = '~/Projects/HyperPACE/field_data/metadata/EXPORTSNA/';
 
 % Field notes are still incomplete and Scott is on vacation. Start with the
 % ship data
@@ -43,6 +43,7 @@ opts = setvaropts(opts,'date','InputFormat','dd/MM/yy');
 opts = setvaropts(opts,'time','InputFormat','HH:mm:ss.SSS');
 
 fList = dir([fp fSep '*.' name]);
+if ~isempty(fList)
 PRmat = nan(0,4);
 for i=1:numel(fList)
     T = readtable([fList(i).folder fSep fList(i).name],opts);
@@ -53,7 +54,10 @@ for i=1:numel(fList)
     PRmat(start:stop,2:4) = T{:,{'heading','pitch','roll'}};
 end
 PRmat = sortrows(PRmat,1);
-
+else
+    fprintf('No %s file found\n',fp)
+    return
+end
 % Pitch/Roll are about 1Hz
 % Ship gets underway at exactly 07:34:47.665 on 5/1/2021, still going 8.3
 % knots at the end of the last GPS file.
@@ -132,7 +136,7 @@ datetick('x','mm/dd HH','keepticks')
 hold on
 plot(GPSmatInterp(:,1),GPSmatInterp(:,5),'r')
 title(name)
-print(sprintf('plt/%s.png',name),'-dpng')
+print(sprintf('plt/%s_SOG.png',name),'-dpng')
 
 %% CTD (pumped from 5.5m below surface; use SBE38 for temp data near the intake)
 %   datenum, sst, sss
@@ -161,10 +165,15 @@ for i=1:numel(fList)
 end
 CTDmat = sortrows(CTDmat,1);
 
+% QC salinity(34 psu based on visual screening)
+CTDmat(CTDmat(:,3) < 34, 3) = nan;
+filter = ~isnan(CTDmat(:,3));
+
 % CTD are about 1Hz
-% Interpolate to P&R
+% Interpolate to Pitch&Roll
+%       Some NaNs due to lack of extrapolation
 dT1 = datetime(CTDmat(:,1),'Convertfrom','Datenum');
-CTDmatInterp = interp1(dT1,CTDmat,dateTimeInterp);
+CTDmatInterp = interp1(dT1(filter),CTDmat(filter,:),dateTimeInterp);
 clear dT*
 
 figure
@@ -174,7 +183,16 @@ datetick('x','mm/dd HH','keepticks')
 hold on
 plot(CTDmatInterp(:,1),CTDmatInterp(:,2),'r')
 title(name)
-print(sprintf('plt/%s.png',name),'-dpng')
+print(sprintf('plt/%s_SST.png',name),'-dpng')
+
+figure
+plot(CTDmat(:,1),CTDmat(:,3))
+ylabel('SSS')
+datetick('x','mm/dd HH','keepticks')
+hold on
+plot(CTDmatInterp(:,1),CTDmatInterp(:,3),'r')
+title(name)
+print(sprintf('plt/%s_SSS.png',name),'-dpng')
 
 %% Wind
 % No info on sensor location, etc. Speed and direction are "abs", so presumably
@@ -225,7 +243,7 @@ datetick('x','mm/dd HH','keepticks')
 hold on
 plot(WindmatInterp(:,1),WindmatInterp(:,2),'r')
 title(name)
-print(sprintf('plt/%s.png',name),'-dpng')
+print(sprintf('plt/%s_Windspeed.png',name),'-dpng')
 
 %% Station Log file (Waiting for Scott...)
 %   station, sky, seas
