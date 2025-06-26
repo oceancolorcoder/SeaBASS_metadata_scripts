@@ -17,7 +17,10 @@ datDir = '~/Projects/HyperPACE/field_data/metadata/EXPORTSNA/';
 % 8. wamos: significant wave height*, direction* (magnitude is lower than experienced)
 
 % Field notes:
-logFile = fullfile(datDir,'EXPORTSNA_2021_FSG_Stationlog.xlsx');
+logFile = fullfile(datDir,'EXPORTSNA_2021_FSG_Stationlog_updated.xlsx');
+
+% Subset final database to courser timestampe
+subTime = 30; % seconds
 
 
 fSep = filesep;
@@ -314,6 +317,26 @@ end
 close(f)
 
 newMat(isnan(newMat)) = -9999.0;
+
+%% Subset to courser timestamp from 1 HZ
+dateTime = datetime(newMat(:,2),newMat(:,3),newMat(:,4),newMat(:,5),newMat(:,6),newMat(:,7));
+dateTimeNew = dateTime(1):seconds(subTime):dateTime(end);
+% Use NEAREST to avoid interpolating the -9999s
+% station = newMat(:,1);
+% station1 = interp1(dateTime, station, dateTimeNew,'nearest');
+newMat2 = interp1(dateTime,newMat,dateTimeNew,'nearest');
+% newMat2(:,1) = station1;
+% Override interpolated datetimes to restore whole numbers
+% for i=size(newMat2):-1:1
+%     [year,mon,day,hr,minute,sec]=datevec(dateTimeNew(i));
+%     newMat2(i,2) = year;
+%     newMat2(i,3) = mon;
+%     newMat2(i,4) = day;
+%     newMat2(i,5) = hr;
+%     newMat2(i,6) = minute;
+%     newMat2(i,7) = sec;
+% end
+
 %% Transcribe the sb header and write file
 fidIn = fopen(inHeader,'r');
 fidOut = fopen(outFile,'w');
@@ -326,9 +349,9 @@ while ~contains(line,'end_header')
 end
 fclose(fidIn);
 
-for i=1:size(newMat,1)
+for i=1:size(newMat2,1)
     % station yyyy mon day hr min sec lat lon heading Wt sal wind wdir cloud waveht pitch roll
-    fprintf(fidOut,'%.1f,%d,%02d,%02d,%02d,%02d,%02d,%.4f,%.4f,%03d,%.1f,%.2f,%.1f,%03d,%d,%.1f,%.2f,%.2f\n',newMat(i,:));
+    fprintf(fidOut,'%.1f,%d,%02d,%02d,%02d,%02d,%02d,%.4f,%.4f,%03d,%.1f,%.2f,%.1f,%03d,%d,%.1f,%.2f,%.2f\n',newMat2(i,:));
 end
 
 fclose(fidOut);

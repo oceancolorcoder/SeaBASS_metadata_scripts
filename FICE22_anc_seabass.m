@@ -21,7 +21,7 @@ inFile2 = fullfile(datDir,'FICE22_NASA_field_log_pySAS.xlsx');
 inFile3 = fullfile(datDir,'ptf-3m_07_2022.txt');
 
 % AOC.Venice.Aerosol_Optical_Depth
-inFile4 = '~/GitRepos/AERONET/dat/Aeronet_OC_FICE22_20220711_20220722_L15.mat';
+inFile4 = '~/GitRepos/AERONET/dat/Aeronet_OC_FICE22_20220711_20220722_Venise_L15.mat';
 
 inHeader = fullfile(datDir,'FICE22_Ancillary_header.sb');
 
@@ -43,6 +43,7 @@ lon1 = repmat(lon,size(data1,1),1);
 windDir1 = data1(:,3); % degrees
 windSpeed1 = data1(:,4); % m/s at 10m
 seas1 = data1(:,6); % m
+airT = data1(:,9); % Air temp at 18m
 sst1 = data1(:,10); % SST
 % rh1 = data1(:,11); % %
 
@@ -75,18 +76,18 @@ tLim = minutes(5); % Station data are logged for 5 minutes by non-automated radi
 disp('Looping')
 for i=1:length(data1)    
     
-    % /fields=station,year,month,day,hour,minute,second,lat,lon,Wt,wind,wdir,waveht,cloud,sal    
-    dataMat(i,2:13) = [dateTime1(i).Year, dateTime1(i).Month, dateTime1(i).Day, ....
+    % /fields=station,year,month,day,hour,minute,second,lat,lon,At,Wt,wind,wdir,waveht,cloud,sal,aot    
+    dataMat(i,2:14) = [dateTime1(i).Year, dateTime1(i).Month, dateTime1(i).Day, ....
         dateTime1(i).Hour, dateTime1(i).Minute, dateTime1(i).Second, ...
         lat1(i), lon1(i), ...
-        sst1(i), windSpeed1(i), windDir1(i), seas1(i)];
+        airT(i), sst1(i), windSpeed1(i), windDir1(i), seas1(i)];
     
     % FOR FICE22, Only accept the station time from log and up to 5 minutes
     % after
     whr = dateTime1(i) >= dateTime2 & dateTime1(i) < dateTime2+tLim;
     if sum(whr) == 1        
         dataMat(i,1) = station(whr);
-        dataMat(i,14) = cloud2(whr);
+        dataMat(i,15) = cloud2(whr);
     elseif sum(whr) > 1
         disp('Multiple matches error.')
     end
@@ -107,7 +108,6 @@ dataMat(isnan(dataMat)) = -9999;
 fprintf('Read File 3; Hydrographic -3m data: %s\n',inFile3)
 fid = fopen(inFile3);
 %date; time; cond; press; sal; dens; -; -; odo; ooxsat; -----
-% formatSpec = '%s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f';
 formatSpec = '%02f/%02f/%02f %02f.%02f.%02f.%03f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f';
 C = textscan(fid,formatSpec,...
     'Delimiter',';','HeaderLines',9);
@@ -121,7 +121,7 @@ disp('Looping')
 for i=1:length(data1)               
     [~,index] = find_nearest(dateTime1(i),dateTime3);
     if abs(dateTime1(i) - dateTime3(index)) < tLim
-        dataMat(i,15) = sal(index);
+        dataMat(i,16) = sal(index);
     end
 end
 
@@ -135,7 +135,7 @@ for i=1:length(dateTime1)
 
     % THIS MAY BE IMPROVED USING AERONET AOD FILES INSTEAD OF AERONET-OC
     % FILES 
-    dataMat(i,16) = AOC.Venise.Aerosol_Optical_Depth(index,5); % This may be many hours off, and is at 551.9 nm, not 550 nm
+    dataMat(i,17) = AOC.Venise.Aerosol_Optical_Depth(index,5); % This may be many hours off, and is at 551.9 nm, not 550 nm
 end
 
 %% Transcribe the sb header and write file
@@ -151,8 +151,8 @@ end
 fclose(fidIn);
 
 for i=1:size(dataMat,1)
-    %               station,year,month,day,hour,minute,second,lat,lon,Wt,wind,wdir,waveht,cloud,sal,aot_550
-    fprintf(fidOut,'%d,%d,%02d,%02d,%02d,%02d,%02d,%.3f,%.3f,%.1f,%.1f,%d,%.1f,%d,%.3f,%.4f\n',dataMat(i,:));
+    %               station,year,month,day,hour,minute,second,lat,lon,At,Wt,wind,wdir,waveht,cloud,sal,aot_550
+    fprintf(fidOut,'%d,%d,%02d,%02d,%02d,%02d,%02d,%.3f,%.3f,%.1f,%.1f,%.1f,%d,%.1f,%d,%.3f,%.4f\n',dataMat(i,:));
 end
 
 fclose(fidOut);
